@@ -41,7 +41,7 @@ class StockData:
 def getTickInterval(delta):
     best = 1
     for k in range(-20, 20):
-        for mpl in [1, 0.5, 0.2, 0.25]:
+        for mpl in [1, 0.5, 0.2]:
             x = pow(10.0, k) * mpl
             if abs(x - delta) < abs(best - delta):
                 best = x
