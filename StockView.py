@@ -6,9 +6,13 @@ Created on Mar 14, 2018
 
 from PyQt4 import QtGui, QtCore
 import common as cmn
-from common import APP_NAME, kProgramName
+from common import APP_NAME, kProgramName, kLeftAlign
 from stock import StockData, getTicks
 import sys
+
+kViewCandle = 0
+kViewBars   = 1
+kViewLinear = 2
 
 class GraphWidget(QtGui.QWidget):
 
@@ -27,6 +31,7 @@ class GraphWidget(QtGui.QWidget):
         self.data = data        
         self.owner = owner
         self.i0 = 0 # starting index
+        self.view_mode = kViewCandle
         
     
     kPixelsPerEntry = 10
@@ -42,6 +47,9 @@ class GraphWidget(QtGui.QWidget):
     def gety(self, y):
         return y * self.y_mpl + self.y_add
     
+    cl_red = QtGui.QColor('red')
+    cl_green = QtGui.QColor('green')
+    
     def drawCandle(self, p, color, entry, x):
         def pt(x, y):
             return QtCore.QPointF(x, self.gety(y))
@@ -55,6 +63,16 @@ class GraphWidget(QtGui.QWidget):
             p.setBrush(color)
         p.drawRect(QtCore.QRectF(pt(x - self.kCandleWidth, entry.open),
                                  pt(x + self.kCandleWidth, entry.close)))
+        
+    def drawBar(self, p, entry, x):
+        def pt(x, y):
+            return QtCore.QPointF(x, self.gety(y))
+        color = self.cl_green if entry.open < entry.close else self.cl_red
+        p.setPen(color)
+        p.drawLine(pt(x, entry.low), pt(x, entry.high))
+        p.drawLine(pt(x - self.kCandleWidth, entry.open), pt(x, entry.open))
+        p.drawLine(pt(x + self.kCandleWidth, entry.close), pt(x, entry.close))
+        
         
         
     def paintEvent(self, ev):
@@ -124,13 +142,20 @@ class GraphWidget(QtGui.QWidget):
             
         
         p.setPen(cl_white)
-        cl_red = QtGui.QColor('red')
-        cl_green = QtGui.QColor('green')
+        last = None
         for i in range(self.i0, i1):
             e = self.data.data[i]
-            #color = cl_red if e.open > e.close else cl_green
-            color = cl_white
-            self.drawCandle(p, color, e, getx(i))        
+            if self.view_mode == kViewCandle:
+                #color = cl_red if e.open > e.close else cl_green
+                color = cl_white
+                self.drawCandle(p, color, e, getx(i))
+            elif self.view_mode == kViewBars:
+                self.drawBar(p, e, getx(i))
+            else:
+                if last:
+                    p.drawLine(pt(getx(i-1), last.close), pt(getx(i), e.close))
+                
+            last = e       
         
 
 class MainW(QtGui.QMainWindow):
@@ -164,12 +189,18 @@ class MainW(QtGui.QMainWindow):
             self.pbox.update()
         
         self.sbar.valueChanged.connect(seti0)
-#         self.pbox_scroll = QtGui.QScrollArea(self)
-#         self.pbox_scroll.setWidget(self.pbox)
-#         self.pbox_scroll.setWidgetResizable(True)
-#         self.pbox_scroll.setFocusProxy(self.pbox)
-#         layout = self.pbox_scroll
-        layout = cmn.VBox([self.pbox, self.sbar], spacing=0)
+        
+        self.view_mode_cbx = QtGui.QComboBox()
+        self.view_mode_cbx.addItems(['Свечи', "Бары", "Линейный"])
+        
+        def setViewMode(mode):
+            self.pbox.view_mode = mode
+            self.pbox.update()
+        
+        self.view_mode_cbx.currentIndexChanged.connect(setViewMode)
+        toolbar = cmn.HBox([QtGui.QLabel(' Вид графика'), self.view_mode_cbx], align=kLeftAlign)
+                
+        layout = cmn.VBox([toolbar, self.pbox, self.sbar], spacing=0)
         self.setCentralWidget(cmn.ensureWidget(layout))
 
         
