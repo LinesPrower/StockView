@@ -114,6 +114,8 @@ class ConfigDialog(cmn.Dialog):
         
 class ConfigurableObject():
     
+    name = ''
+    
     def addParam(self, name, title, ty, min_val=None, max_val=None, validator=None):
         self.entries.append(ConfigEntry(name, title, ty, min_val, max_val, validator))
         

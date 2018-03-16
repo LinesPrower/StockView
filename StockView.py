@@ -9,7 +9,7 @@ import common as cmn
 from common import APP_NAME, kProgramName, kLeftAlign
 from stock import StockData, getTicks
 import sys
-from indicators.base import indicators_list
+from indicators.base import indicators_list, ConfigurableObject, kTypeColor
 
 # these import are needed for the indicators to show up in the combobox
 import indicators.roc
@@ -19,6 +19,22 @@ import indicators.emv
 kViewCandle = 0
 kViewBars   = 1
 kViewLinear = 2
+
+class MainSettings(ConfigurableObject):
+    
+    def __init__(self):
+        ConfigurableObject.__init__(self)
+        self.bg_color = 'white'
+        self.axes_color = 'black'
+        self.grid_color = 'gray'
+        self.graph_color = 'black'
+        
+        self.addParam('bg_color', 'Цвет фона', kTypeColor)
+        self.addParam('axes_color', 'Цвет осей', kTypeColor)
+        self.addParam('grid_color', 'Цвет сетки', kTypeColor)
+        self.addParam('graph_color', 'Цвет графика курса', kTypeColor)
+        
+        self.loadConfig()
 
 class GraphWidget(QtGui.QWidget):
     
@@ -32,7 +48,8 @@ class GraphWidget(QtGui.QWidget):
     
     # kBGColor = QtGui.QColor('black')
     kBGColor = QtGui.QColor('white')
-    kFGColor = cl_black
+    kFGColor = QtGui.QColor('black')
+    kAxesColor = QtGui.QColor('black')
 
     def __init__(self, owner, data):
         QtGui.QWidget.__init__(self)
@@ -55,6 +72,11 @@ class GraphWidget(QtGui.QWidget):
         self.i0 = 0 # starting index
         self.view_mode = kViewCandle
         
+    def applySettings(self, settings):
+        self.dash_pen.setColor(QtGui.QColor(settings.grid_color))
+        self.kBGColor.setNamedColor(settings.bg_color)
+        self.kFGColor.setNamedColor(settings.graph_color)
+        self.kAxesColor.setNamedColor(settings.axes_color)
     
     kPixelsPerEntry = 10
     kCenterShift = 5
@@ -144,7 +166,7 @@ class GraphWidget(QtGui.QWidget):
             p.setPen(QtGui.QColor(col))
             p.drawLine(pt(self.ruler_w, y), pt(w, y))
             
-        p.setPen(self.cl_blue)        
+        p.setPen(self.kAxesColor)        
         self.drawVerticalRuler(p, y_min, y_max)
             
         # signals
@@ -179,7 +201,6 @@ class GraphWidget(QtGui.QWidget):
         ruler_w = self.ruler_w
         h1 = h - self.ruler_h
         p = QtGui.QPainter(self)
-        p.setPen(self.kFGColor)
         
         n = self.visibleEntriesCount()
         i1 = min(len(self.data.data), self.i0 + n)
@@ -191,6 +212,7 @@ class GraphWidget(QtGui.QWidget):
         self.y_max = max_y 
         
         # vertical ruler
+        p.setPen(self.kAxesColor)
         if not self.indicator:
             self.drawVerticalRuler(p, min_y, max_y)
             
@@ -198,7 +220,7 @@ class GraphWidget(QtGui.QWidget):
             return QtCore.QPointF(x, self.gety(y))
             
         # horizontal ruler
-        p.setPen(self.kFGColor)
+        p.setPen(self.kAxesColor)
         p.drawLine(ruler_w, h1, w, h1)
         last = None
         ticks = []
@@ -330,6 +352,11 @@ class MainW(QtGui.QMainWindow):
         fileMenu.addSeparator()
         fileMenu.addAction(cmn.Action(self, _('Выход'), '', self.exitApp))
         
+        settings = menubar.addAction(cmn.Action(self, 'Настройка', '', self.doSettings, 'F6'))
+        
+        self.settings = MainSettings()
+        self.pbox.applySettings(self.settings)
+        
         #helpMenu = menubar.addMenu(_('Help'))
         #helpMenu.addAction(self.act_about)
         self.show()
@@ -338,6 +365,11 @@ class MainW(QtGui.QMainWindow):
     def doConfigure(self):
         ind = indicators_list[self.indicator_cbx.currentIndex()]
         if ind.configure():
+            self.updateUI()
+            
+    def doSettings(self):
+        if self.settings.configure():
+            self.pbox.applySettings(self.settings)
             self.updateUI()
         
     def updateUI(self):
