@@ -13,6 +13,7 @@ from indicators.base import indicators_list
 
 # these import are needed for the indicators to show up in the combobox
 import indicators.roc
+import indicators.emv
 
 
 kViewCandle = 0
