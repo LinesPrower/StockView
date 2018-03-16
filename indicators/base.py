@@ -12,10 +12,20 @@ import json
 
 kTypeFloat = 0
 kTypeInt = 1
+kTypeColor = 2
 
 class InvalidParameter(Exception):
     def __init__(self, entry, message):
         self.message = entry.title + ': ' + message
+
+class ClickableLabel(QtGui.QLabel):
+    def __init__(self, text, handler):
+        QtGui.QLabel.__init__(self, text)
+        self.handler = handler
+        
+    def mousePressEvent(self, ev):
+        self.handler()        
+    
 
 class ConfigEntry():
     def __init__(self, name, title, ty, min_val=None, max_val=None, validator=None):
@@ -28,9 +38,24 @@ class ConfigEntry():
         self.ui = None
         
     def makeUI(self, obj):
-        self.ui = QtGui.QLineEdit()
-        self.ui.setText(str(self.getval(obj)))
+        if self.ty == kTypeColor:
+            self.lbl = ClickableLabel('', self.selectColor)
+            self.color = str(self.getval(obj))
+            self.lbl.setStyleSheet('QLabel { background-color:%s; }' % self.color)
+            self.lbl
+            btn = cmn.ToolBtn(cmn.Action(self.lbl, 'Выбрать цвет', 'icons/spectrum.png', self.selectColor))
+            self.ui = cmn.HBox([self.lbl, btn], spacing=0)
+        else: 
+            self.ui = QtGui.QLineEdit()
+            self.ui.setText(str(self.getval(obj)))
+        
         return self.ui
+    
+    def selectColor(self):
+        t = QtGui.QColorDialog.getColor(QtGui.QColor(self.color), self.lbl, self.title)
+        if t.isValid():
+            self.color = t.name()
+            self.lbl.setStyleSheet('QLabel { background-color:%s; }' % self.color)
         
     def getUIval(self):
         if self.ty == kTypeFloat:
@@ -45,6 +70,8 @@ class ConfigEntry():
                 res = int(t)
             except:
                 raise InvalidParameter(self, 'Значение должно быть целым числом')
+        elif self.ty == kTypeColor:
+            res = self.color
         else:
             raise InvalidParameter(self, 'Недопустимый тип')
         
@@ -70,6 +97,7 @@ class ConfigDialog(cmn.Dialog):
     def __init__(self, obj):
         cmn.Dialog.__init__(self, APP_NAME, 'Config' + obj.__class__.__name__, 'Настройка ' + obj.name)
         layout = cmn.Table([(e.title, e.makeUI(obj)) for e in obj.entries])
+        layout = cmn.VBox([layout], align=cmn.kTopAlign)
         self.obj = obj
         self.setDialogLayout(layout, self.doOk)
         
@@ -137,6 +165,9 @@ class Indicator(ConfigurableObject):
         self.ready = True
         
     def configure(self):
+        if not self.entries:
+            QtGui.QMessageBox.information(None, APP_NAME, 'Данный индикатор не имеет настроек')
+            return False
         res = ConfigurableObject.configure(self)
         if res:
             self.ready = False
@@ -148,5 +179,20 @@ def addIndicator(cls):
     indicators_list.append(cls())
     return cls
     
+def windowAverage(arr, n):
+    res = [None] * len(arr)
+    cnt = 0
+    sum = 0
+    for i, x in enumerate(arr):
+        if x == None:
+            continue
+        sum += x
+        cnt += 1
+        if cnt >= n:
+            res[i] = sum / n
+        if cnt >= n:
+            sum -= arr[i-n+1]
+    return res
+    
 if __name__ == '__main__':
-    pass
+    print(windowAverage([None, None, 3, 5, 10, 4, 2, 8], 3))

@@ -153,15 +153,16 @@ class GraphWidget(QtGui.QWidget):
                 continue
             x = self.getx(i)
             e = self.data.data[i]
+            y = self.gety(e.close)
             if is_buy:
                 p.setPen(self.cl_green)
                 p.setBrush(self.cl_green)
-                y = self.gety(min(e.open, e.close))
+                #y = self.gety(min(e.open, e.close))
                 dy = 15
             else:
                 p.setPen(self.cl_red)
                 p.setBrush(self.cl_red)
-                y = self.gety(max(e.open, e.close))
+                #y = self.gety(max(e.open, e.close))
                 dy = -15
             p.drawConvexPolygon(QtCore.QPointF(x, y),
                                 QtCore.QPointF(x - 9, y + dy),
@@ -235,7 +236,31 @@ class GraphWidget(QtGui.QWidget):
                     p.drawLine(pt(self.getx(i-1), last.close), pt(self.getx(i), e.close))
                 
             last = e
-        self.drawIndicator(p)       
+        self.drawIndicator(p)
+        
+        # name
+        p.setPen(self.kFGColor)
+        p.drawText(self.ruler_w + 10, 20, self.data.name)
+        
+    def wheelEvent(self, ev):
+        self.owner.sbar.wheelEvent(ev)
+    
+    def mousePressEvent(self, ev):
+        if not self.owner.sbar.isVisible():
+            return
+        self.panning = True
+        self.pan_start_x = ev.globalPos().x()
+        self.pan_start_value = self.owner.sbar.value()
+    
+    def mouseMoveEvent(self, ev):
+        if not self.panning:
+            return
+        x = ev.globalPos().x()
+        delta = (self.pan_start_x - x) // self.kPixelsPerEntry
+        self.owner.sbar.setSliderPosition(self.pan_start_value + delta)
+        
+    def mouseReleaseEvent(self, ev):
+        self.panning = False       
         
 
 class MainW(QtGui.QMainWindow):
@@ -245,7 +270,7 @@ class MainW(QtGui.QMainWindow):
 
         self.resize(800, 600)
         self.setWindowTitle(kProgramName)
-        #self.setWindowIcon(cmn.GetIcon('icons/duckling.png'))
+        self.setWindowIcon(cmn.GetIcon('icons/main.png'))
         
         
         #self.check_results = CheckResultsPanel(self)

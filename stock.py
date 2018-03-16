@@ -7,13 +7,14 @@ import io
 from math import ceil
 
 class DataEntry:
-    def __init__(self, date, time, open, high, low, close):
+    def __init__(self, date, time, open, high, low, close, vol):
         self.date = int(date)
         self.time = int(time)
         self.open = float(open)
         self.close = float(close)
         self.low = float(low)
         self.high = float(high)
+        self.vol = float(vol)
 
 class EFileFormatError(Exception):
     def __init__(self, message):
@@ -35,8 +36,10 @@ class StockData:
                     if line != self.kFormatStr:
                         raise EFileFormatError('Invalid file format. Expected: %s' % self.kFormatStr)
                     continue
-                t = line.split(',')[2:8]
-                self.data.append(DataEntry(*t))
+                t = line.split(',')
+                if i == 1:
+                    self.name = t[0]
+                self.data.append(DataEntry(*t[2:9]))
 
 def getTickInterval(delta):
     best = 1
