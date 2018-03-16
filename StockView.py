@@ -14,6 +14,7 @@ from indicators.base import indicators_list, ConfigurableObject, kTypeColor
 # these import are needed for the indicators to show up in the combobox
 import indicators.roc
 import indicators.emv
+from stock_table import StockDataDialog
 
 
 kViewCandle = 0
@@ -347,8 +348,10 @@ class MainW(QtGui.QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu(_('Файл'))
         self.act_open = cmn.Action(self, _('Открыть данные котировок...'), 'icons/open.png', self.doOpen, 'Ctrl+O')
+        self.act_show_data = cmn.Action(self, 'Показать таблицу', '', self.doShowTable, 'Ctrl+T')
         
         fileMenu.addAction(self.act_open)
+        fileMenu.addAction(self.act_show_data)
         fileMenu.addSeparator()
         fileMenu.addAction(cmn.Action(self, _('Выход'), '', self.exitApp))
         
@@ -361,6 +364,14 @@ class MainW(QtGui.QMainWindow):
         #helpMenu.addAction(self.act_about)
         self.show()
         self.doOpenRaw(r'Finam_data\GAZP_170314_180314.txt')
+        
+    def doShowTable(self):
+        if not self.data.data:
+            QtGui.QMessageBox.information(self, kProgramName, 'Данные не загружены')
+            return
+        d = StockDataDialog(self.data.data)
+        d.exec_()
+        self.resetUI()
     
     def doConfigure(self):
         ind = indicators_list[self.indicator_cbx.currentIndex()]
