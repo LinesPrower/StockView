@@ -161,14 +161,14 @@ class GraphWidget(QtGui.QWidget):
             y2 = self.indicator.values[i+1]
             if y1 != None and y2 != None:
                 p.drawLine(pti(i, y1), pti(i+1, y2))
-                
+                    
+        p.setPen(self.kAxesColor)        
+        self.drawVerticalRuler(p, y_min, y_max)
+        
         w = self.width()
         for y, col in self.indicator.lines:
             p.setPen(QtGui.QColor(col))
             p.drawLine(pt(self.ruler_w, y), pt(w, y))
-            
-        p.setPen(self.kAxesColor)        
-        self.drawVerticalRuler(p, y_min, y_max)
             
         # signals
         self.compute_y_transform(self.y_min, self.y_max)
