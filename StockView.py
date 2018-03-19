@@ -14,6 +14,7 @@ from indicators.base import indicators_list, ConfigurableObject, kTypeColor
 # these import are needed for the indicators to show up in the combobox
 import indicators.roc
 import indicators.emv
+import indicators.mfi
 from stock_table import StockDataDialog
 
 
