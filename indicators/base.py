@@ -188,13 +188,26 @@ def windowAverage(arr, n):
     for i, x in enumerate(arr):
         if x == None:
             continue
-        sum += x
-        cnt += 1
         if cnt >= n:
             res[i] = sum / n
-        if cnt >= n:
-            sum -= arr[i-n+1]
+        sum += x
+        cnt += 1
+        if cnt > n:
+            sum -= arr[i-n]
+    return res
+
+def windowFold(arr, n, fun, x0):
+    res = [None] * len(arr)
+    for i in range(n, len(res)):
+        if arr[i-n] != None:
+            x = x0
+            for j in range(i-n, i):
+                x = fun(x, arr[j])
+            res[i] = x
     return res
     
+    
 if __name__ == '__main__':
-    print(windowAverage([None, None, 3, 5, 10, 4, 2, 8], 3))
+    data = [None, None, 3, 5, 10, 4, 2, 8]
+    #print(windowAverage(data, 3))
+    print(windowFold(data, 3, min, 1000))
