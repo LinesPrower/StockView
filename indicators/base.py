@@ -3,7 +3,7 @@ Created on Mar 15, 2018
 
 @author: LinesPrower
 '''
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtWebKit, QtCore
 import common as cmn
 from common import APP_NAME
 import os
@@ -149,6 +149,18 @@ class ConfigurableObject():
         with io.open(fname, 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.getParams(), sort_keys=True))
         return True
+
+class IndicatorHelpDialog(cmn.Dialog):
+    
+    def __init__(self, filename):
+        cmn.Dialog.__init__(self, cmn.APP_NAME, 'IndicatorHelp', 'Описание индикатора')
+        wk = QtWebKit.QWebView()
+        with io.open(filename, encoding='utf-8') as f:
+            base = QtCore.QUrl.fromLocalFile(os.path.realpath(filename))
+            wk.setHtml(f.read(), base)
+        self.setDialogLayout(wk, lambda: None, False, True)
+        self.setFocus()
+        
     
 class Indicator(ConfigurableObject):
     
@@ -162,6 +174,13 @@ class Indicator(ConfigurableObject):
         self.lines = [] # tuples (y, color)
         self.values = []
         self.signals = [] # tuples (idx, bool), True = buy
+    
+    def showHelp(self):
+        filename = 'help/%s.htm' % self.__class__.__name__
+        if not os.path.isfile(filename):
+            QtGui.QMessageBox.warning(None, cmn.kProgramName, 'Файл с описанием индикатора %s отсутствует.' % filename)
+            return
+        IndicatorHelpDialog(filename).exec_()
         
     def compute(self, data):
         self.ready = True

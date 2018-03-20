@@ -303,9 +303,6 @@ class MainW(QtGui.QMainWindow):
         self.setWindowTitle(kProgramName)
         self.setWindowIcon(cmn.GetIcon('icons/main.png'))
         
-        
-        #self.check_results = CheckResultsPanel(self)
-        #self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.check_results)
 
         s = QtCore.QSettings('LinesPrower', APP_NAME)
         t = s.value("mainwnd/geometry")
@@ -390,7 +387,8 @@ class MainW(QtGui.QMainWindow):
         self.resetUI()
         
     def showIndicatorHelp(self):
-        pass
+        ind = indicators_list[self.indicator_cbx.currentIndex()]
+        ind.showHelp()
     
     def doConfigure(self):
         ind = indicators_list[self.indicator_cbx.currentIndex()]
