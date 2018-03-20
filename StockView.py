@@ -7,7 +7,7 @@ Created on Mar 14, 2018
 from PyQt4 import QtGui, QtCore
 import common as cmn
 from common import APP_NAME, kProgramName, kLeftAlign
-from stock import StockData, getTicks
+from stock import StockData, getTicks, kScaleDay
 import sys
 from indicators.base import indicators_list, ConfigurableObject, kTypeColor
 
@@ -15,7 +15,9 @@ from indicators.base import indicators_list, ConfigurableObject, kTypeColor
 import indicators.roc
 import indicators.emv
 import indicators.mfi
+import indicators.williams_r
 from stock_table import StockDataDialog
+from about_ui import AboutDialog
 
 
 kViewCandle = 0
@@ -228,7 +230,11 @@ class GraphWidget(QtGui.QWidget):
         ticks = []
         for i in range(self.i0, i1):
             e = self.data.data[i]
-            if not last or e.date != last.date:
+            if self.data.scale == kScaleDay:
+                has_tick = i % 7 == 0
+            else:
+                has_tick = not last or e.date != last.date 
+            if has_tick:
                 day = e.date % 100
                 mon = e.date % 10000 // 100
                 s = "%d.%02d" % (day, mon)
@@ -323,10 +329,13 @@ class MainW(QtGui.QMainWindow):
         self.view_mode_cbx = QtGui.QComboBox()
         self.view_mode_cbx.addItems(['Свечи', "Бары", "Линейный"])
         
+        self.scale_cbx = QtGui.QComboBox()
+        self.scale_cbx.addItems(['H1', 'D1'])
+        
         def setViewMode(mode):
             self.pbox.view_mode = mode
             self.pbox.update()
-            
+                
         self.indicator_checkbox = QtGui.QCheckBox('Индикатор')
         self.indicator_checkbox.toggled.connect(self.updateUI)
         self.indicator_cbx = QtGui.QComboBox()
@@ -334,12 +343,16 @@ class MainW(QtGui.QMainWindow):
         self.indicator_cbx.currentIndexChanged.connect(self.updateUI)
         
         self.view_mode_cbx.currentIndexChanged.connect(setViewMode)
+        self.scale_cbx.currentIndexChanged.connect(self.resetUI)
         toolbar = cmn.HBox([QtGui.QLabel(' Вид графика'), 
                             self.view_mode_cbx,
+                            QtGui.QLabel('  Период'),
+                            self.scale_cbx,
                             QtGui.QLabel('   '),
                             self.indicator_checkbox,
                             self.indicator_cbx,
-                            cmn.ToolBtn(cmn.Action(self, 'Настройка индикатора', 'icons/wrench.png', self.doConfigure, 'F7'))
+                            cmn.ToolBtn(cmn.Action(self, 'Настройка индикатора', 'icons/wrench.png', self.doConfigure, 'F7')),
+                            cmn.ToolBtn(cmn.Action(self, 'Описание индикатора', 'icons/info.png', self.showIndicatorHelp, 'F1'))
                             ], align=kLeftAlign)
                 
         layout = cmn.VBox([toolbar, self.pbox, self.sbar], spacing=0)
@@ -350,6 +363,7 @@ class MainW(QtGui.QMainWindow):
         fileMenu = menubar.addMenu(_('Файл'))
         self.act_open = cmn.Action(self, _('Открыть данные котировок...'), 'icons/open.png', self.doOpen, 'Ctrl+O')
         self.act_show_data = cmn.Action(self, 'Показать таблицу', '', self.doShowTable, 'Ctrl+T')
+        self.act_about = cmn.Action(self, _('О программе...'), 'icons/info.png', lambda: AboutDialog().exec_())
         
         fileMenu.addAction(self.act_open)
         fileMenu.addAction(self.act_show_data)
@@ -361,18 +375,22 @@ class MainW(QtGui.QMainWindow):
         self.settings = MainSettings()
         self.pbox.applySettings(self.settings)
         
-        #helpMenu = menubar.addMenu(_('Help'))
-        #helpMenu.addAction(self.act_about)
+        helpMenu = menubar.addMenu(_('Справка'))
+        helpMenu.addAction(self.act_about)
+        
         self.show()
         self.doOpenRaw(r'Finam_data\GAZP_170314_180314.txt')
         
     def doShowTable(self):
-        if not self.data.data:
+        if not self.data.raw_data:
             QtGui.QMessageBox.information(self, kProgramName, 'Данные не загружены')
             return
-        d = StockDataDialog(self.data.data)
+        d = StockDataDialog(self.data.raw_data)
         d.exec_()
         self.resetUI()
+        
+    def showIndicatorHelp(self):
+        pass
     
     def doConfigure(self):
         ind = indicators_list[self.indicator_cbx.currentIndex()]
@@ -408,6 +426,7 @@ class MainW(QtGui.QMainWindow):
     def resetUI(self): # called when data changes
         for ind in indicators_list:
             ind.ready = False
+        self.data.setScale(self.scale_cbx.currentIndex())
         self.updateScrollbar()
         self.updateUI()
 

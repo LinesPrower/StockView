@@ -1,5 +1,5 @@
 '''
-Created on Mar 19, 2018
+Created on Mar 20, 2018
 
 @author: LinesPrower
 '''
@@ -8,18 +8,18 @@ from indicators.base import Indicator, kTypeFloat, kTypeInt, addIndicator,\
     kTypeColor, windowAverage
 
 @addIndicator
-class MFI(Indicator):
+class WilliamsR(Indicator):
     
-    name = 'MFI'
+    name = 'Williams %R'
     
     def __init__(self):
         Indicator.__init__(self)
-        self.n = 14
-        self.low = 20
-        self.high = 80
+        self.n = 7
+        self.low = -80
+        self.high = -20
         self.addParam('n', 'Число периодов', kTypeInt, 1, 1000)
-        self.addParam('low', 'Нижняя граница', kTypeFloat, 0, 100)
-        self.addParam('high', 'Верхняя граница', kTypeFloat, 0, 100, 
+        self.addParam('low', 'Нижняя граница', kTypeFloat, -100, 100)
+        self.addParam('high', 'Верхняя граница', kTypeFloat, -100, 100, 
                       validator=lambda x: 'Верхняя граница должна быть больше нижней' if x <= self.low else None)    
         self.loadConfig()
         
@@ -27,6 +27,8 @@ class MFI(Indicator):
         self.values = []
         self.signals = []
         self.lines = [(self.low, 'red'), (self.high, 'green')]
+        
+        
         mf = []
         positive = []
         last = 0 

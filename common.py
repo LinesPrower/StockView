@@ -284,10 +284,10 @@ class Dialog(QtGui.QDialog):
                             for capt, handler in extra_buttons])
 
         if close_btn:
-            buttons.extend([Button(_('Close'), self.reject, autodefault=autodefault)])
+            buttons.extend([Button(_('Закрыть'), self.reject, autodefault=autodefault)])
         else:
             buttons.extend([Button('&OK', ok_handler, autodefault=autodefault),
-                            Button(_('Cancel'), self.reject, autodefault=autodefault)])
+                            Button(_('Отмена'), self.reject, autodefault=autodefault)])
             self.addAction(Action(self, 'OK', '', ok_handler, 'F5'))
         
         buttons = HBox(buttons, align = kRightAlign)
