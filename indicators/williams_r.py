@@ -5,7 +5,7 @@ Created on Mar 20, 2018
 '''
 from PyQt4 import QtGui
 from indicators.base import Indicator, kTypeFloat, kTypeInt, addIndicator,\
-    kTypeColor, windowAverage
+    kTypeColor, windowAverage, windowFold
 
 @addIndicator
 class WilliamsR(Indicator):
@@ -28,34 +28,15 @@ class WilliamsR(Indicator):
         self.signals = []
         self.lines = [(self.low, 'red'), (self.high, 'green')]
         
+        closing = [e.close for e in data]
+        Hn = windowFold(closing, self.n, max, 0, 0)
+        Ln = windowFold(closing, self.n, min, 1e10, 0)
         
-        mf = []
-        positive = []
-        last = 0 
-        for e in data:
-            t = (e.high + e.low + e.close) / 3 * e.vol
-            positive.append(t > last)
-            mf.append(t)
-            last = t
-        m = len(data)
-        pmf = 0
-        nmf = 0
-        for i in range(m):
-            if i >= self.n:
-                if positive[i - self.n]:
-                    pmf -= mf[i - self.n]
-                else:
-                    nmf -= mf[i - self.n]
-                    
-            if positive[i]:
-                pmf += mf[i]
-            else:
-                nmf += mf[i]
-            if i >= self.n - 1 and abs(nmf) > 1e-10:
-                mr = pmf / nmf
-                t = 100 - 100 / (1 + mr)
-            else:
+        for i in range(len(data)):
+            if Hn[i] == None:
                 t = None
+            else:
+                t = (Hn[i] - closing[i]) / (Hn[i] - Ln[i]) * -100
             self.values.append(t)
             
         last_signal = None
@@ -64,9 +45,9 @@ class WilliamsR(Indicator):
                 continue
             sig = None
             if x < self.low:
-                sig = True
-            elif x > self.high:
                 sig = False
+            elif x > self.high:
+                sig = True
             if sig != None and sig != last_signal:
                 self.signals.append((i, sig))
                 last_signal = sig            

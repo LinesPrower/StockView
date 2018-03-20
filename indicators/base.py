@@ -196,12 +196,13 @@ def windowAverage(arr, n):
             sum -= arr[i-n]
     return res
 
-def windowFold(arr, n, fun, x0):
+def windowFold(arr, n, fun, x0, delay = 1):
     res = [None] * len(arr)
+    di = 1 - delay
     for i in range(n, len(res)):
-        if arr[i-n] != None:
+        if arr[i-n+di] != None:
             x = x0
-            for j in range(i-n, i):
+            for j in range(i-n+di, i+di):
                 x = fun(x, arr[j])
             res[i] = x
     return res
@@ -210,4 +211,4 @@ def windowFold(arr, n, fun, x0):
 if __name__ == '__main__':
     data = [None, None, 3, 5, 10, 4, 2, 8]
     #print(windowAverage(data, 3))
-    print(windowFold(data, 3, min, 1000))
+    print(windowFold(data, 3, min, 1000, 0))
