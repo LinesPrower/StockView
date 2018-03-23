@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #===============================================================================
-from PyQt4 import QtGui, QtWebKit, QtCore
+from PyQt4 import QtGui, QtWebKit, QtCore, QtNetwork
 import common as cmn
 from common import APP_NAME
 import os
